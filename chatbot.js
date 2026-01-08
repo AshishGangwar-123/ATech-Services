@@ -5,6 +5,7 @@ class SimpleBot {
         this.recognition = null;
         this.synth = window.speechSynthesis;
         this.setupVoice();
+        this.startGlobalSync();
     }
 
     loadBrain() {
@@ -26,16 +27,49 @@ class SimpleBot {
         localStorage.setItem(this.brainKey, JSON.stringify(this.knowledge));
     }
 
-    train(question, answer) {
-        // Check if already exists to avoid duplicates
+    async train(question, answer) {
+        // Local update
         const exists = this.knowledge.find(k => k.q.toLowerCase() === question.toLowerCase());
         if (exists) {
-            exists.a = answer; // Update existing
+            exists.a = answer;
         } else {
             this.knowledge.push({ q: question.toLowerCase(), a: answer });
         }
         this.saveBrain();
+
+        // Global update (Firestore)
+        if (window.db) {
+            try {
+                // We use a simple document 'brain' with a field 'data' array, or a collection 'bot_knowledge'
+                // For simplicity, let's use a collection 'bot_knowledge' where doc ID is a hash or just random
+                // Actually, to keep it simple, let's just push the specific Q/A as a doc.
+                await window.db.collection('bot_knowledge').add({ q: question, a: answer, timestamp: Date.now() });
+                console.log("Brain updated globally");
+            } catch (e) {
+                console.error("Brain sync failed", e);
+            }
+        }
         return true;
+    }
+
+    startGlobalSync() {
+        if (!window.db) return;
+        window.db.collection('bot_knowledge').orderBy('timestamp').onSnapshot(snap => {
+            snap.docChanges().forEach(change => {
+                if (change.type === "added") {
+                    const data = change.doc.data();
+                    // Merge into local knowledge if not present (or update)
+                    const mkQ = data.q.toLowerCase();
+                    const exists = this.knowledge.find(k => k.q.toLowerCase() === mkQ);
+                    if (exists) {
+                        exists.a = data.a;
+                    } else {
+                        this.knowledge.push({ q: mkQ, a: data.a });
+                    }
+                }
+            });
+            this.saveBrain(); // Update local storage with new global knowledge
+        });
     }
 
     findAnswer(query) {

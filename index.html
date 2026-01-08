@@ -314,18 +314,20 @@
     // --- FIREBASE CONFIGURATION ---
     // TODO: Replace with your actual Firebase project keys
     const firebaseConfig = {
-      apiKey: "AIzaSy... (Replace Me)",
-      authDomain: "your-project.firebaseapp.com",
-      projectId: "your-project-id",
-      storageBucket: "your-project.appspot.com",
-      messagingSenderId: "123456789",
-      appId: "1:123456789:web:abcdef"
+      apiKey: "AIzaSyD1SIVOLB9QhUgGt5UZKvZIXnd__LFS_uM",
+      authDomain: "aplus-f3e54.firebaseapp.com",
+      projectId: "aplus-f3e54",
+      storageBucket: "aplus-f3e54.firebasestorage.app",
+      messagingSenderId: "502662795942",
+      appId: "1:502662795942:web:188142fc0ec7beeaf81a67",
+      measurementId: "G-XFQBBK56S9"
     };
 
     let db;
     try {
       firebase.initializeApp(firebaseConfig);
       db = firebase.firestore();
+      window.db = db; // Expose for chatbot.js
       console.log("Firebase initialized");
     } catch (e) {
       console.error("Firebase init failed. Using Offline Mode.", e);
@@ -744,6 +746,9 @@
       });
     }
 
+
+    const REQ_KEY = "service_requests_v1";
+    function loadRequests() { return JSON.parse(localStorage.getItem(REQ_KEY) || "[]"); }
 
     function renderRequests() {
       const listEl = el('requestsList');
