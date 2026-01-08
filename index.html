@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Primary Meta Tags -->
+  <title>College Services Hub — Skills, Projects, Internships & Career Support</title>
+  <meta name="title" content="College Services Hub — Skills, Projects, Internships & Career Support">
+  <meta name="description"
+    content="Get portfolio websites, resume building, project help, internships, placement support & career guidance — everything a student needs to grow. Skill up. Rise up.">
+  <meta name="keywords"
+    content="portfolio, resume, internships, placement, project help, students services, coding help, career guidance, college services, ATS resume, mini project, internship finder">
+  <meta name="author" content="College Services Hub">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="College Services Hub — Skills, Services & Success">
+  <meta property="og:description"
+    content="A one-stop platform for students: Portfolio websites, project assistance, resume building, internships & placement guidance.">
+  <meta property="og:image"
+    content="https://image2url.com/images/1764764687937-4bc676d6-de9b-4872-a1b7-3072b0e67977.jpg">
+  <meta property="og:url" content="https://collegeserviceshub.netlify.app/">
+  <meta property="og:site_name" content="College Services Hub">
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="College Services Hub — Skills, Services & Success">
+  <meta name="twitter:description"
+    content="Get professional portfolio websites, project help, internships, and career guidance for students.">
+  <meta name="twitter:image"
+    content="https://image2url.com/images/1764764687937-4bc676d6-de9b-4872-a1b7-3072b0e67977.jpg">
+
+  <!-- Extra Ranking Boost -->
+  <meta name="robots" content="index, follow">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="theme-color" content="#4F46E5">
+
+
+
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Page specific tweaks if needed, but keeping it minimal */
+    .welcome-container {
+      padding: 8vh 0;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen">
+  <!-- Chat Widget (Fixed) -->
+  <div id="chatWidget" class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+    <div id="chatWindow" class="glass-card w-80 h-96 hidden flex flex-col shadow-2xl animate-pop origin-bottom-right">
+      <div class="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+          <span class="font-semibold text-sm">APlus Assistant</span>
+        </div>
+        <button id="closeChat" class="text-muted hover:text-white">&times;</button>
+      </div>
+      <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3 text-sm scrollbar-hide">
+        <div class="bg-indigo-500/10 p-2 rounded-lg rounded-tl-none self-start max-w-[85%] text-xs">
+          Hello! I can help you with services, prices, or general info. Ask me anything! 🤖
+        </div>
+      </div>
+      <div class="p-3 border-t border-white/10 flex gap-2">
+        <button id="voiceBtn" class="p-2 rounded-full hover:bg-white/10 text-indigo-400 transition-colors"
+          title="Speak">
+          🎤
+        </button>
+        <input id="chatInput" class="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-muted"
+          placeholder="Type a message..." autocomplete="off">
+        <button id="sendBtn" class="text-indigo-400 hover:text-white transition-colors">➤</button>
+      </div>
+    </div>
+    <button id="toggleChat"
+      class="w-14 h-14 rounded-full btn-primary flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:scale-110 transition-transform">
+      💬
+    </button>
+  </div>
+
+  <!-- Content Wrapper (Animated) -->
+  <div id="app-wrapper" class="animate-slide-up">
+    <header class="glass sticky top-0 z-40 transition-all duration-300">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 bg-indigo-600 text-white flex items-center justify-center rounded-xl shadow-lg shadow-indigo-500/30">
+            CS</div>
+          <div>
+            <h1 class="text-lg font-bold tracking-tight">College Services Hub</h1>
+            <p class="text-xs text-muted">Placement counselling, mini projects & more</p>
+          </div>
+        </div>
+        <div class="flex gap-2 items-center">
+          <button id="openAdmin"
+            class="px-3 py-2 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-sm hidden hover:bg-emerald-600/30 transition-colors">Add
+            Service</button>
+          <button id="viewRequests"
+            class="px-3 py-2 rounded-lg bg-orange-600/20 text-orange-400 border border-orange-500/30 text-sm hidden hover:bg-orange-600/30 transition-colors">View
+            Requests</button>
+
+        </div>
+      </div>
+    </header>
+    <div class="fixed top-24 right-4 z-50 flex flex-col gap-2 p-2 rounded-xl glass">
+      <button id="themeDark"
+        class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
+        title="Dark Theme">🌙</button>
+      <button id="themeBlue"
+        class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
+        title="Coding Theme">💻</button>
+    </div>
+
+    <div class="welcome-container animate-fade-in">
+      <div class="max-w-4xl mx-auto px-4">
+        <h1 class="text-4xl md:text-6xl font-bold mb-6 text-gradient animate-float">Welcome to the Digital Hub</h1>
+        <p class="text-lg md:text-xl text-muted font-light leading-relaxed max-w-2xl mx-auto">
+          Where Skills, Services & Success Come Together.<br>
+          <span class="opacity-75">Learn, build and grow with powerful digital services — from portfolios to
+            internships.</span>
+        </p>
+      </div>
+    </div>
+
+    <main class="max-w-6xl mx-auto px-4 py-8 relative z-10">
+      <section id="homeView" class="animate-fade-in delay-1">
+        <div class="mb-8 flex items-center justify-between">
+          <h2 class="text-2xl font-semibold border-l-4 border-indigo-500 pl-4">Available Services</h2>
+        </div>
+        <div id="servicesGrid" class="service-grid"></div>
+      </section>
+      <section id="serviceView" class="hidden animate-fade-in">
+        <div id="serviceContent"></div>
+      </section>
+
+      <!-- Admin: Teach Bot -->
+      <div id="teachPanel" class="hidden animate-pop">
+        <h3 class="text-xl font-bold mb-4 flex items-center gap-2">🧠 Train Chatbot</h3>
+        <div class="space-y-4">
+          <input id="teachQ"
+            class="w-full p-3 rounded-lg bg-white/5 border border-white/10 focus:border-indigo-500 outline-none"
+            placeholder="User Question (e.g., 'What is the hostel fee?')">
+          <textarea id="teachA" rows="3"
+            class="w-full p-3 rounded-lg bg-white/5 border border-white/10 focus:border-indigo-500 outline-none"
+            placeholder="Bot Answer (e.g., 'Hostel fees are ₹5000 per semester.')"></textarea>
+          <button id="teachBtn" class="btn-primary w-full py-2">Add to Brain</button>
+        </div>
+      </div>
+
+      <!-- Admin: Service Requests -->
+      <!-- Requests Panel (admin only) -->
+      <div id="requestsPanel" class="hidden max-w-4xl mx-auto mt-12 glass-card">
+        <div class="flex items-center justify-between mb-6 border-b border-white/10 pb-4">
+          <h2 class="text-xl font-semibold">User Requests</h2>
+          <div class="text-sm text-muted">Manage form submissions</div>
+        </div>
+        <div id="requestsList" class="space-y-4 text-sm"></div>
+      </div>
+    </main>
+
+    <!-- Admin modal -->
+    <div id="adminModal"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50 transition-opacity">
+      <div class="glass-card max-w-2xl w-full p-8 relative">
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex gap-4">
+            <h3 class="text-xl font-bold text-gradient">Admin Panel</h3>
+            <div class="flex gap-2 text-xs">
+              <button id="tabServices"
+                class="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 transition-colors">Services</button>
+              <button id="tabTestimonials"
+                class="px-3 py-1 rounded-full bg-white/5 text-muted hover:bg-white/10 transition-colors">Testimonials</button>
+            </div>
+          </div>
+          <button id="closeAdmin" class="text-muted hover:text-white transition-colors text-xl">✕</button>
+        </div>
+        <form id="serviceForm" class="space-y-4">
+          <input type="hidden" id="serviceId" />
+          <div>
+            <label class="text-xs uppercase tracking-wider text-muted mb-1 block">Service Name</label>
+            <input id="serviceName" required class="w-full p-3 rounded-lg" placeholder="e.g. Resume Making" />
+          </div>
+          <div>
+            <label class="text-xs uppercase tracking-wider text-muted mb-1 block">Short Description</label>
+            <input id="serviceShort" required class="w-full p-3 rounded-lg" placeholder="one-line summary" />
+          </div>
+          <div>
+            <label class="text-xs uppercase tracking-wider text-muted mb-1 block">Detailed Description</label>
+            <textarea id="serviceDesc" rows="6" class="w-full p-3 rounded-lg"
+              placeholder="Describe what the service includes, delivery time, price etc."></textarea>
+          </div>
+          <div class="flex gap-4">
+            <div class="w-1/3">
+              <label class="text-xs uppercase tracking-wider text-muted mb-1 block">Price</label>
+              <input id="servicePrice" type="text" class="p-3 w-full rounded-lg" placeholder="Price" />
+            </div>
+            <div class="flex-1">
+              <label class="text-xs uppercase tracking-wider text-muted mb-1 block">Tags</label>
+              <input id="serviceTags" class="p-3 w-full rounded-lg" placeholder="Tags (comma separated)" />
+            </div>
+          </div>
+          <div class="flex justify-end gap-3 pt-4">
+            <button type="button" id="clearForm"
+              class="px-5 py-2.5 rounded-lg border border-white/10 hover:bg-white/5 transition-colors text-sm">Clear</button>
+            <button type="submit" class="btn-primary">Save Service</button>
+          </div>
+        </form>
+
+        <!-- Testimonial Form (Hidden by default) -->
+        <form id="testimonialForm" class="space-y-4 hidden">
+          <input type="hidden" id="testId" />
+          <div class="flex gap-4">
+            <div class="flex-1">
+              <label class="text-xs uppercase tracking-wider text-muted mb-1 block">Student Name</label>
+              <input id="testName" required class="w-full p-3 rounded-lg" placeholder="John Doe" />
+            </div>
+            <div class="flex-1">
+              <label class="text-xs uppercase tracking-wider text-muted mb-1 block">University</label>
+              <input id="testUni" required class="w-full p-3 rounded-lg" placeholder="IIT Bombay" />
+            </div>
+          </div>
+
+          <div class="flex gap-4">
+            <div class="flex-1">
+              <label class="text-xs uppercase tracking-wider text-muted mb-1 block">Location</label>
+              <input id="testLoc" required class="w-full p-3 rounded-lg" placeholder="Mumbai, MH" />
+            </div>
+            <div class="flex-1">
+              <label class="text-xs uppercase tracking-wider text-muted mb-1 block">Avatar URL</label>
+              <input id="testImg" class="w-full p-3 rounded-lg" placeholder="https://... (Optional)" />
+            </div>
+          </div>
+
+          <div>
+            <label class="text-xs uppercase tracking-wider text-muted mb-1 block">Feedback Message</label>
+            <textarea id="testMsg" required rows="3" class="w-full p-3 rounded-lg"
+              placeholder="Great service! Helped me get an internship."></textarea>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-4">
+            <button type="button" id="clearTestForm"
+              class="px-5 py-2.5 rounded-lg border border-white/10 hover:bg-white/5 transition-colors text-sm">Clear</button>
+            <button type="submit" class="btn-primary">Save Feedback</button>
+          </div>
+        </form>
+        <div class="mt-6 text-xs text-center text-muted">Tip: Use the export button to download the JSON of all
+          services.
+        </div>
+      </div>
+    </div>
+    <!-- Login Modal -->
+    <div id="loginModal"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50 transition-opacity animate-pop">
+      <div class="glass-card max-w-sm w-full p-8 relative text-center">
+        <div
+          class="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-indigo-500/30">
+          <span class="text-2xl">🔒</span>
+        </div>
+        <h3 class="text-xl font-bold mb-2">System Config</h3>
+        <p class="text-sm text-muted mb-6">Enter password.</p>
+
+        <div class="space-y-4">
+          <input type="password" id="adminPassInput"
+            class="w-full p-3 rounded-lg text-center tracking-widest placeholder:tracking-normal"
+            placeholder="Password" />
+          <div class="flex gap-3">
+            <button id="cancelLogin"
+              class="flex-1 py-2.5 rounded-lg border border-white/10 hover:bg-white/5 transition-colors text-sm">Cancel</button>
+            <button id="unlockAdmin" class="flex-1 btn-primary text-sm shadow-lg shadow-indigo-500/20">Unlock</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="max-w-6xl mx-auto px-4 py-16 animate-fade-in relative z-10">
+      <div class="mb-12 text-center">
+        <h2 class="text-3xl font-bold mb-4 flex items-center justify-center gap-3">
+          <span class="text-gradient">Student Voices</span>
+          <span class="text-2xl">💬</span>
+        </h2>
+        <p class="text-muted max-w-xl mx-auto">Hear from students who have transformed their college journey with our
+          services.</p>
+      </div>
+
+      <!-- Horizontal Scroll / Grid -->
+      <div id="testimonialsList" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- JS will populate this -->
+      </div>
+    </section>
+
+    <footer class="mt-20 border-t border-white/5 bg-black/20 backdrop-blur-md relative z-20">
+      <div class="max-w-6xl mx-auto py-8 text-center">
+        <div class="mb-4 text-muted text-sm">© 2025 College Services Hub — Trusted by Students, Powered by Mentors.
+        </div>
+        <div> <span id="premiumBtn"
+            class="px-3 py-1 rounded-full bg-white/5 text-xs text-muted hover:text-white cursor-pointer transition-colors relative z-30">System
+            Config</span></div>
+      </div>
+    </footer>
+  </div> <!-- End of app-wrapper -->
+  <script>
+    let adminMode = false;
+    const adminHash = "0568697146689cc753cccfe6a53af4b9f21ae9d5771e261cd9f951d304e15cfd"; // SHA-256 of password
+    const STORAGE_KEY = 'college_services_v1';
+    const REQ_KEY = 'service_requests_v1';
+    const TEST_KEY = 'aplus_testimonials_v1';
+    let services = [];
+    let testimonials = [];
+    const el = id => document.getElementById(id);
+
+    const saveToStorage = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(services));
+    const loadFromStorage = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    const saveTestimonials = () => localStorage.setItem(TEST_KEY, JSON.stringify(testimonials));
+    const loadTestimonials = () => JSON.parse(localStorage.getItem(TEST_KEY) || "[]");
+
+    function genId() { return 's_' + Math.random().toString(36).slice(2, 9); }
+    function escapeHtml(str = '') { return String(str).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
+
+    function ensureTestimonials() {
+      testimonials = loadTestimonials();
+      if (testimonials.length === 0) {
+        testimonials = [
+          { id: 't1', name: 'Rohan Mehta', uni: 'VIT Vellore', loc: 'Vellore, TN', msg: 'The project help was a lifesaver! Got my code and documentation on time.', img: '' },
+          { id: 't2', name: 'Sarah Khan', uni: 'Amity University', loc: 'Noida, UP', msg: 'Resume building service is top-notch. Landed 3 interviews in a week.', img: '' },
+          { id: 't3', name: 'Ankit Sharma', uni: 'SRM University', loc: 'Chennai, TN', msg: 'Found a paid internship through the finder tool. Highly recommended!', img: '' }
+        ];
+        saveTestimonials();
+      }
+    }
+
+    function renderTestimonials() {
+      const container = el('testimonialsList');
+      if (!container) return; // Guard clause
+      container.innerHTML = '';
+      container.className = 'scroller max-w-full'; // Update container class
+
+      const track = document.createElement('div');
+      track.className = 'scroller-inner';
+
+      // Function to create a card
+      const createCard = (t) => {
+        const imgUrl = t.img || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(t.name)}`;
+        const card = document.createElement('div');
+        // Reduced width for horizontal scroll items, removed animate-pop to avoid weird loop resets
+        card.className = 'glass-card p-6 flex flex-col gap-4 w-80 md:w-96 flex-shrink-0 relative group';
+
+        card.innerHTML = `
+           <div class="flex items-start justify-between">
+              <div class="flex items-center gap-3">
+                 <img src="${imgUrl}" class="w-12 h-12 rounded-full border-2 border-indigo-500/30 bg-white/5" alt="${t.name}">
+                 <div>
+                    <div class="font-bold text-white text-sm">${escapeHtml(t.name)}</div>
+                    <div class="text-[10px] text-muted">${escapeHtml(t.loc)}</div>
+                 </div>
+              </div>
+              <span class="px-2 py-1 rounded bg-indigo-500/10 border border-indigo-500/20 text-[10px] text-indigo-300 font-semibold">${escapeHtml(t.uni)}</span>
+           </div>
+           
+           <p class="text-sm text-muted/90 flex-1 leading-relaxed">"${escapeHtml(t.msg)}"</p>
+           
+           ${adminMode ? `
+             <div class="absolute top-2 right-2 hidden group-hover:flex gap-1 z-10">
+                <button onclick="editTestimonial('${t.id}')" class="p-1.5 rounded bg-white/10 hover:bg-white/20 text-xs text-white" title="Edit">✏️</button>
+                <button onclick="deleteTestimonial('${t.id}')" class="p-1.5 rounded bg-rose-500/20 hover:bg-rose-500/30 text-xs text-rose-400" title="Delete">🗑️</button>
+             </div>
+           ` : ''}
+        `;
+        return card;
+      };
+
+      // Add original items
+      testimonials.forEach(t => track.appendChild(createCard(t)));
+
+      // Add duplicate items for seamless loop
+      testimonials.forEach(t => track.appendChild(createCard(t)));
+
+      container.appendChild(track);
+    }
+
+    function editTestimonial(id) {
+      if (!adminMode) return;
+      const t = testimonials.find(x => x.id === id);
+      if (!t) return;
+      el('testId').value = t.id;
+      el('testName').value = t.name;
+      el('testUni').value = t.uni;
+      el('testLoc').value = t.loc;
+      el('testMsg').value = t.msg;
+      el('testImg').value = t.img || '';
+
+      // Switch to testimonials tab
+      el('tabTestimonials').click();
+      openAdminModal();
+    }
+
+    function deleteTestimonial(id) {
+      if (!adminMode) return;
+      if (!confirm('Delete this feedback?')) return;
+      testimonials = testimonials.filter(x => x.id !== id);
+      saveTestimonials();
+      renderTestimonials();
+    }
+
+    function ensureSeed() {
+      services = loadFromStorage();
+      if (services.length === 0) {
+        services = [
+          { id: genId(), name: 'Placement Counselling', short: 'Personalized guidance for campus placements', desc: 'Resume review, mock interviews, strategy & training.', price: '₹49', tags: ['placement', 'counselling'] },
+          { id: genId(), name: 'Mini Project Help', short: 'Ideas + Submission ready code', desc: 'Project ideas, diagrams, code and full documentation.', price: '₹599-₹2499', tags: ['project', 'code'] },
+          { id: genId(), name: 'Resume Making', short: 'Professional ATS-friendly resume', desc: 'Resume + LinkedIn redesign, PDF export.', price: '₹199', tags: ['resume', 'cv'] },
+          { id: genId(), name: 'Portfolio Website', short: 'Modern portfolio website to showcase skills & projects', desc: 'Responsive portfolio with contact links, projects, certificates.', price: '₹499', tags: ['portfolio', 'web'] },
+          { id: genId(), name: 'Internship Finder', short: 'Paid & unpaid internships across fields for students & freshers', desc: 'Curated internship listings and application help.', price: 'Freely', tags: ['internship', 'opportunity'] }
+        ];
+        saveToStorage();
+      }
+    }
+
+    function renderGrid() {
+      const grid = el('servicesGrid'); grid.innerHTML = '';
+      services.forEach((s, idx) => {
+        const card = document.createElement('div');
+        card.className = 'glass-card flex flex-col justify-between animate-pop';
+        card.style.animationDelay = (idx * 0.1) + 's';
+
+        card.innerHTML = `
+      <div class="mb-4">
+        <div class="flex justify-between items-start mb-2">
+           <h3 class="text-xl font-bold tracking-tight">${escapeHtml(s.name)}</h3>
+           <span class="text-xs font-mono px-2 py-1 rounded bg-white/10 text-primary-light">${escapeHtml(s.price)}</span>
+        </div>
+        <p class="text-sm text-muted leading-relaxed">${escapeHtml(s.short)}</p>
+      </div>
+      
+      <div>
+        <div class="flex gap-2 flex-wrap mb-4">
+          ${(s.tags || []).map(t => `<span class="tag-new">${escapeHtml(t)}</span>`).join('')}
+        </div>
+        <div class="flex justify-between items-center pt-4 border-t border-white/5">
+          <button data-id="${s.id}" class="openService text-sm font-semibold text-primary hover:text-white transition-colors flex items-center gap-1">
+             View Details <span>→</span>
+          </button>
+          <div class="flex gap-2">
+            <button data-id="${s.id}" class="editService text-xs text-muted hover:text-white hidden px-2 py-1 rounded hover:bg-white/10">Edit</button>
+            <button data-id="${s.id}" class="deleteService text-xs text-rose-400 hover:text-rose-300 hidden px-2 py-1 rounded hover:bg-rose-500/10">Delete</button>
+          </div>
+        </div>
+      </div>`;
+        grid.appendChild(card);
+      });
+      document.querySelectorAll('.openService').forEach(btn => btn.addEventListener('click', e => openService(e.currentTarget.dataset.id)));
+      document.querySelectorAll('.editService').forEach(btn => btn.addEventListener('click', e => editService(e.currentTarget.dataset.id)));
+      document.querySelectorAll('.deleteService').forEach(btn => btn.addEventListener('click', e => deleteService(e.currentTarget.dataset.id)));
+      if (adminMode) showAdminOptions();
+    }
+
+    function askAdminPassword() {
+      // Show custom modal
+      const modal = el('loginModal');
+      const input = el('adminPassInput');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      input.value = '';
+      input.focus();
+    }
+
+    function closeLoginModal() {
+      const modal = el('loginModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function checkPassword() {
+      const p = el('adminPassInput').value;
+      if (!p) return;
+
+      const msgBuffer = new TextEncoder().encode(p);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      // console.log("Checking Hash:", hashHex);
+
+      if (hashHex === adminHash) {
+        adminMode = true;
+        closeLoginModal();
+        alert("System Config Activated");
+        showAdminOptions();
+        renderRequests();
+      } else {
+        alert("Wrong Password");
+        el('adminPassInput').value = '';
+        el('adminPassInput').focus();
+      }
+    }
+
+    function showAdminOptions() {
+      document.querySelectorAll(".editService, .deleteService").forEach(el => el.classList.remove("hidden"));
+      el("openAdmin")?.classList.remove("hidden");
+      el("viewRequests")?.classList.remove("hidden");
+      el("openTeach").classList.remove("hidden"); // New button
+      el("requestsPanel")?.classList.add("hidden"); // hidden by default until viewed
+      el("teachPanel").classList.add("hidden");
+      renderTestimonials();
+    }
+
+    function openService(id) { location.hash = "#service/" + id; }
+    function showServiceView(id) {
+      const s = services.find(x => x.id === id); if (!s) return location.hash = '';
+      el('homeView').classList.add('hidden'); el('serviceView').classList.remove('hidden');
+      el('serviceContent').innerHTML = `
+    <div class="glass-card max-w-4xl mx-auto p-8 relative overflow-hidden">
+      <div class="absolute top-0 right-0 p-32 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+      
+      <button id="backBtn" class="text-sm font-semibold text-muted hover:text-white mb-6 flex items-center gap-2 group">
+        <span class="group-hover:-translate-x-1 transition-transform">←</span> Back to Services
+      </button>
+      
+      <div class="flex flex-col md:flex-row gap-8 items-start">
+        <div class="flex-1">
+           <h2 class="text-3xl md:text-5xl font-bold mb-2 text-gradient">${escapeHtml(s.name)}</h2>
+           <p class="text-lg text-muted mb-6">${escapeHtml(s.short)}</p>
+           
+           <div class="prose prose-invert prose-sm max-w-none text-muted/90 mb-8 p-6 rounded-2xl bg-black/20 border border-white/5">
+             ${(s.desc || '').replaceAll('\n', '<br>')}
+           </div>
+           
+           <div class="flex gap-3 flex-wrap"> 
+               ${(s.tags || []).map(t => `<span class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs">${t}</span>`).join('')}
+           </div>
+        </div>
+        
+        <div class="w-full md:w-80 glass p-6 rounded-xl space-y-4">
+            <div class="text-center pb-4 border-b border-white/10">
+                <div class="text-sm text-muted mb-1">Price</div>
+                <div class="text-3xl font-bold">${escapeHtml(s.price)}</div>
+            </div>
+            <a href="request.html?service=${encodeURIComponent(s.name)}" class="btn-primary w-full block text-center shadow-lg shadow-indigo-500/20">Request Service</a>
+            <button id="editFromView" class="w-full py-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm text-muted hidden transition-colors">Edit Details</button>
+        </div>
+      </div>
+    </div>`;
+      el("backBtn").onclick = () => location.hash = '';
+      if (adminMode) { el("editFromView").classList.remove("hidden"); el("editFromView").onclick = () => editService(s.id); }
+    }
+
+    function openAdminModal() { clearForm(); el('adminModal').classList.remove('hidden'); el('adminModal').classList.add('flex'); }
+    function closeAdminModal() { el('adminModal').classList.add('hidden'); el('adminModal').classList.remove('flex'); }
+    function clearForm() { ['serviceId', 'serviceName', 'serviceShort', 'serviceDesc', 'servicePrice', 'serviceTags'].forEach(id => el(id).value = ''); }
+
+    function editService(id) {
+      if (!adminMode) return alert("Unauthorized Access");
+      const s = services.find(x => x.id === id);
+      el('serviceId').value = s.id; el('serviceName').value = s.name; el('serviceShort').value = s.short;
+      el('serviceDesc').value = s.desc; el('servicePrice').value = s.price; el('serviceTags').value = (s.tags || []).join(',');
+      openAdminModal();
+    }
+
+    function deleteService(id) {
+      if (!adminMode) return alert("Unauthorized Access");
+      if (!confirm("Delete this service?")) return;
+      services = services.filter(x => x.id !== id); saveToStorage(); renderGrid();
+      if (location.hash === "#service/" + id) location.hash = '';
+    }
+
+    /* Requests: load, render, delete */
+    function loadRequests() { return JSON.parse(localStorage.getItem(REQ_KEY) || "[]"); }
+
+    function renderRequests() {
+      const listEl = el('requestsList');
+      const items = loadRequests();
+      listEl.innerHTML = "";
+
+      if (items.length === 0) {
+        listEl.innerHTML = `<p class="text-muted text-center py-4">No requests yet.</p>`;
+        return;
+      }
+
+      items.forEach((r, i) => {
+        const card = document.createElement("div");
+        card.className = "p-4 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors";
+
+        const CONTACT_EMAIL = "faindno.1.com";
+        const WHATSAPP_NUMBER = "91XXXXXXXXXX";
+        card.innerHTML = `
+      <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+             <span class="font-bold text-base text-white">${escapeHtml(r.name)}</span>
+             <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-muted">${escapeHtml(r.date)}</span>
+          </div>
+          <div class="text-muted">Request for <strong class="text-white">${escapeHtml(r.service)}</strong></div>
+          <div class="text-xs text-muted/80 font-mono">
+            ${escapeHtml(r.phone)} • ${escapeHtml(r.email)}
+          </div>
+          <div class="mt-2 text-sm text-slate-300 bg-black/20 p-2 rounded">${escapeHtml(r.details || 'No details provided')}</div>
+        </div>
+        <div class="flex sm:flex-col gap-2 w-full sm:w-auto">
+          <a href="mailto:${r.email}" class="px-3 py-1.5 text-xs font-semibold bg-emerald-500/20 text-emerald-400 rounded hover:bg-emerald-500/30 text-center">Email</a>
+          <a href="https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, '')}?text=${encodeURIComponent('Hello, regarding: ' + r.service)}" target="_blank" class="px-3 py-1.5 text-xs font-semibold bg-green-500/20 text-green-400 rounded hover:bg-green-500/30 text-center">WhatsApp</a>
+          <button class="px-3 py-1.5 text-xs font-semibold bg-rose-500/20 text-rose-400 rounded hover:bg-rose-500/30 delReq" data-index="${i}">Delete</button>
+        </div>
+      </div>`;
+        listEl.appendChild(card);
+      });
+
+      document.querySelectorAll(".delReq").forEach(btn =>
+        btn.addEventListener("click", e => {
+          const idx = Number(e.target.dataset.index);
+          const arr = loadRequests();
+          arr.splice(idx, 1);
+          localStorage.setItem(REQ_KEY, JSON.stringify(arr));
+          renderRequests();
+        })
+      );
+    }
+
+    /* Theme buttons */
+    const body = document.body;
+    el('themeDark').addEventListener('click', () => { body.classList.remove('theme-blue'); body.classList.add('theme-dark'); localStorage.setItem('theme', 'dark'); });
+    el('themeBlue').addEventListener('click', () => { body.classList.remove('theme-dark'); body.classList.add('theme-blue'); localStorage.setItem('theme', 'blue'); });
+    const savedTheme = localStorage.getItem('theme');
+    // Default to dark if saved is light or null
+    if (savedTheme === 'blue') body.classList.add('theme-blue');
+    else { body.classList.add('theme-dark'); localStorage.setItem('theme', 'dark'); }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      ensureSeed(); ensureTestimonials(); renderGrid(); renderTestimonials();
+      const q = new URLSearchParams(window.location.search);
+      const service = q.get("service");
+      if (service) document.getElementById("serviceName").value = service;
+
+      if (document.getElementById("selectedService")) {
+        document.getElementById("selectedService").innerText = service;
+      }
+      function handleHash() {
+        if (location.hash.startsWith("#service/")) showServiceView(location.hash.split("/")[1]);
+        else { el('serviceView').classList.add('hidden'); el('homeView').classList.remove('hidden'); }
+      }
+      window.addEventListener('hashchange', handleHash); handleHash();
+
+      el('premiumBtn').addEventListener('click', askAdminPassword);
+      el('openAdmin').addEventListener('click', openAdminModal);
+      el('closeAdmin')?.addEventListener('click', closeAdminModal);
+
+      el('serviceForm').addEventListener('submit', ev => {
+        ev.preventDefault();
+        const id = el('serviceId').value || genId();
+        const obj = { id, name: el('serviceName').value.trim(), short: el('serviceShort').value.trim(), desc: el('serviceDesc').value.trim(), price: el('servicePrice').value.trim(), tags: el('serviceTags').value.split(',').map(t => t.trim()).filter(Boolean) };
+        const exist = services.find(x => x.id === id); exist ? Object.assign(exist, obj) : services.unshift(obj);
+        saveToStorage(); renderGrid(); closeAdminModal();
+      });
+
+      // Testimonial Form Submit
+      el('testimonialForm').addEventListener('submit', ev => {
+        ev.preventDefault();
+        const id = el('testId').value || genId();
+        const obj = {
+          id,
+          name: el('testName').value.trim(),
+          uni: el('testUni').value.trim(),
+          loc: el('testLoc').value.trim(),
+          msg: el('testMsg').value.trim(),
+          img: el('testImg').value.trim()
+        };
+
+        const exist = testimonials.find(x => x.id === id);
+        if (exist) Object.assign(exist, obj);
+        else testimonials.unshift(obj);
+
+        saveTestimonials();
+        renderTestimonials();
+        alert('Feedback Saved!');
+        el('testimonialForm').reset();
+        el('testId').value = '';
+      });
+
+      el('clearTestForm').addEventListener('click', () => {
+        el('testimonialForm').reset();
+        el('testId').value = '';
+      });
+
+      // Admin Tabs
+      const tabS = el('tabServices');
+      const tabT = el('tabTestimonials');
+      const formS = el('serviceForm');
+      const formT = el('testimonialForm');
+
+      tabS?.addEventListener('click', () => {
+        tabS.classList.add('bg-indigo-500/20', 'text-indigo-300'); tabS.classList.remove('bg-white/5', 'text-muted');
+        tabT.classList.remove('bg-indigo-500/20', 'text-indigo-300'); tabT.classList.add('bg-white/5', 'text-muted');
+        formS.classList.remove('hidden'); formT.classList.add('hidden');
+      });
+
+      tabT?.addEventListener('click', () => {
+        tabT.classList.add('bg-indigo-500/20', 'text-indigo-300'); tabT.classList.remove('bg-white/5', 'text-muted');
+        tabS.classList.remove('bg-indigo-500/20', 'text-indigo-300'); tabS.classList.add('bg-white/5', 'text-muted');
+        formT.classList.remove('hidden'); formS.classList.add('hidden');
+      });
+
+      // viewRequests toggle
+      el('viewRequests').addEventListener('click', () => {
+        el('requestsPanel').classList.toggle('hidden');
+        renderRequests();
+        // scroll into view
+        if (!el('requestsPanel').classList.contains('hidden')) el('requestsPanel').scrollIntoView({ behavior: 'smooth' });
+      });
+
+      // Login Modal Listeners
+      el('unlockAdmin').addEventListener('click', checkPassword);
+      el('cancelLogin').addEventListener('click', closeLoginModal);
+      el('adminPassInput').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') checkPassword();
+      });
+
+      // --- Chatbot Logic ---
+      const chatWindow = el('chatWindow');
+      const messages = el('chatMessages');
+      const chatInput = el('chatInput');
+
+      function addMsg(text, isUser = false) {
+        const div = document.createElement('div');
+        div.className = isUser
+          ? 'bg-indigo-600 p-2 rounded-lg rounded-tr-none self-end max-w-[85%] text-xs ml-auto'
+          : 'bg-indigo-500/10 p-2 rounded-lg rounded-tl-none self-start max-w-[85%] text-xs';
+        div.textContent = text;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+      }
+
+      function handleChat() {
+        const txt = chatInput.value.trim();
+        if (!txt) return;
+        addMsg(txt, true);
+        chatInput.value = '';
+
+        // Simulate thinking delay
+        setTimeout(() => {
+          const ans = bot.findAnswer(txt);
+          addMsg(ans);
+          bot.speak(ans);
+        }, 500);
+      }
+
+      el('toggleChat').addEventListener('click', () => {
+        chatWindow.classList.toggle('hidden');
+        if (!chatWindow.classList.contains('hidden')) chatInput.focus();
+      });
+      el('closeChat').addEventListener('click', () => chatWindow.classList.add('hidden'));
+      el('sendBtn').addEventListener('click', handleChat);
+      el('chatInput').addEventListener('keyup', (e) => { if (e.key === 'Enter') handleChat(); });
+
+      el('voiceBtn').addEventListener('click', () => {
+        el('voiceBtn').classList.add('animate-pulse', 'text-red-400');
+        bot.listen((text) => {
+          el('voiceBtn').classList.remove('animate-pulse', 'text-red-400');
+          chatInput.value = text;
+          handleChat();
+        });
+      });
+
+      // --- Admin Teaching Logic ---
+      el('teachBtn').addEventListener('click', () => {
+        const q = el('teachQ').value.trim();
+        const a = el('teachA').value.trim();
+        if (q && a) {
+          bot.train(q, a);
+          alert('Brain updated! I learned something new.');
+          el('teachQ').value = '';
+          el('teachA').value = '';
+        } else {
+          alert('Please provide both Question and Answer.');
+        }
+      });
+
+      // Admin Panel Toggle (Simple switch for now)
+      el('viewRequests').addEventListener('click', () => {
+        el('requestsPanel').classList.remove('hidden');
+        el('teachPanel').classList.add('hidden');
+      });
+
+      // Add a 'Train Bot' button to header if admin
+      // We'll just reuse the showAdminOptions to append a button if not exists
+
+    });
+  </script>
+  <script src="chatbot.js"></script>
+</body>
+
+</html>

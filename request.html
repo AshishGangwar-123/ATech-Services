@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Request Service</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-4 animate-slide-up">
+
+  <div id="formPage" class="glass-card w-full max-w-md relative animate-pop">
+    <!-- Decorative Blur -->
+    <div
+      class="absolute -top-10 -left-10 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none animate-float">
+    </div>
+
+    <h2 class="text-3xl font-bold mb-2 text-center text-gradient">Request Service</h2>
+    <p class="text-sm text-muted mb-6 text-center">
+      <b>Selected:</b> <span id="selectedService" class="text-primary-light"></span>
+    </p>
+
+    <form id="requestForm" class="space-y-4 relative z-10">
+      <div class="animate-slide-up stagger-1">
+        <label class="text-xs uppercase tracking-wider text-muted mb-1 block pl-1">Your Name</label>
+        <input required id="r_name" class="w-full p-3 rounded-lg" placeholder="e.g. Rahul Sharma">
+      </div>
+      <div class="animate-slide-up stagger-2">
+        <label class="text-xs uppercase tracking-wider text-muted mb-1 block pl-1">Email Address</label>
+        <input required id="r_email" type="email" class="w-full p-3 rounded-lg" placeholder="name@example.com">
+      </div>
+      <div class="animate-slide-up stagger-3">
+        <label class="text-xs uppercase tracking-wider text-muted mb-1 block pl-1">Phone / WhatsApp</label>
+        <input required id="r_phone" class="w-full p-3 rounded-lg" placeholder="+91 99999 99999">
+      </div>
+
+      <!-- Service Selection (Auto-filled or Select) -->
+      <div id="serviceFieldContainer" class="animate-slide-up stagger-3">
+        <label class="text-xs uppercase tracking-wider text-muted mb-1 block pl-1">Service Type</label>
+        <input id="r_service" class="w-full p-3 rounded-lg bg-white/5 border border-white/10"
+          placeholder="e.g. Resume Making" required>
+      </div>
+
+      <div class="animate-slide-up stagger-4">
+        <label class="text-xs uppercase tracking-wider text-muted mb-1 block pl-1">Additional Details</label>
+        <textarea id="r_details" rows="4" class="w-full p-3 rounded-lg"
+          placeholder="Tell us more about your requirements..."></textarea>
+      </div>
+
+      <div class="pt-2 animate-slide-up stagger-5">
+        <button class="btn-primary w-full shadow-lg shadow-indigo-500/20">Submit Request</button>
+      </div>
+      <div class="text-center pt-2 animate-slide-up stagger-5">
+        <a href="index.html" class="text-sm text-muted hover:text-white transition-colors">Cancel & Back to Home</a>
+      </div>
+    </form>
+  </div>
+
+  <div id="successPage" class="hidden glass-card w-full max-w-md text-center p-8 animate-float">
+    <div
+      class="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
+      <span class="text-3xl">✔</span>
+    </div>
+    <h2 class="text-2xl font-bold mb-2 text-white">Request Submitted</h2>
+    <p class="text-muted mb-6">We will contact you shortly. Meanwhile, you can contact us directly:</p>
+
+    <div class="flex justify-center gap-4 mb-8">
+      <a id="emailBtn" href="#"
+        class="p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors border border-white/5" title="Email">
+        <div class="text-2xl mb-1">📧</div>
+        <div class="text-xs text-muted">Email</div>
+      </a>
+      <a id="waBtn" href="#" class="p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors border border-white/5"
+        title="WhatsApp">
+        <div class="text-2xl mb-1">💬</div>
+        <div class="text-xs text-muted">WhatsApp</div>
+      </a>
+    </div>
+
+    <button id="backHome" class="btn-primary w-full">
+      Back to Home
+    </button>
+  </div>
+
+  <script>
+    // === CONFIGURATION GUIDE ===
+    // 1. Create a Google Form with these questions: Name, Email, Phone, Service, Details.
+    // 2. Get the "pre-filled link" to find the entry IDs (entry.123456).
+    // 3. Replace the URL and IDs below with YOURS.
+
+    const GOOGLE_FORM_ACTION_URL = "https://docs.google.com/forms/u/0/d/e/1FAIpQLScSgQ2Qw_xwgSJ1Jj1U76ln8_KJYFphmMYYoim5_wYoor53EA/formResponse"; // REPLACE THIS URL
+    const FORM_FIELDS = {
+      name: "entry.1704972737",    // Replace ID
+      email: "entry.1430795574",   // Replace ID
+      phone: "entry.107083425",    // Replace ID
+      service: "entry.1704585229", // Replace ID
+      details: "entry.835843381"   // Replace ID
+    };
+
+    const STORAGE_KEY = "service_requests_v1";
+
+    function qsGet(name) {
+      const url = new URL(location.href);
+      return url.searchParams.get(name);
+    }
+
+    // Save locally in localStorage (backup ke liye)
+    function saveRequest(data) {
+      const list = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      list.unshift(data);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    }
+
+    // Escape HTML injection
+    function escapeHtml(s = '') {
+      return String(s).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Pre-fill service if provided in query
+      const pre = qsGet('service');
+      if (pre) {
+        const val = decodeURIComponent(pre);
+        const input = document.getElementById('r_service');
+        input.value = val;
+        input.readOnly = true; // Make it read-only if pre-filled
+        input.classList.add('opacity-75', 'cursor-not-allowed');
+        document.getElementById('selectedService').innerText = val;
+      } else {
+        document.getElementById('selectedService').innerText = "General Inquiry";
+      }
+
+      const form = document.getElementById("requestForm");
+      form.addEventListener("submit", e => {
+        e.preventDefault();
+
+        const req = {
+          name: document.getElementById('r_name').value.trim(),
+          email: document.getElementById('r_email').value.trim(),
+          phone: document.getElementById('r_phone').value.trim(),
+          service: document.getElementById('r_service').value.trim(),
+          details: document.getElementById('r_details').value.trim(),
+          date: new Date().toLocaleString()
+        };
+
+        saveRequest(req); // localStorage me save
+
+        // === Google Sheets Integration ===
+        const formData = new FormData();
+        formData.append(FORM_FIELDS.name, req.name);
+        formData.append(FORM_FIELDS.email, req.email);
+        formData.append(FORM_FIELDS.phone, req.phone);
+        formData.append(FORM_FIELDS.service, req.service);
+        formData.append(FORM_FIELDS.details, req.details);
+
+        fetch(GOOGLE_FORM_ACTION_URL, { method: "POST", mode: "no-cors", body: formData })
+          .then(() => console.log("Submitted to Google Sheets"))
+          .catch(err => console.error("Google Sheet Error:", err));
+
+        // Show success page
+        document.getElementById("formPage").classList.add("hidden");
+        document.getElementById("successPage").classList.remove("hidden");
+
+        const MY_EMAIL = "your@email.com";
+        const MY_WHATSAPP = "91XXXXXXXXXX"; // with country code
+        document.getElementById("emailBtn").href = `mailto:${MY_EMAIL}?subject=Service Request: ${encodeURIComponent(req.service)}&body=${encodeURIComponent('Name: ' + req.name + '\nEmail: ' + req.email + '\nPhone: ' + req.phone + '\nDetails: ' + req.details)}`;
+        document.getElementById("waBtn").href = `https://wa.me/${MY_WHATSAPP.replace(/\D/g, '')}?text=${encodeURIComponent('Hello, I submitted a request for: ' + req.service + ' (Name: ' + req.name + ')')}`;
+
+        document.getElementById('backHome').addEventListener('click', () => { window.location.href = 'index.html'; });
+      });
+    });
+  </script>
+</body>
+
+</html>
