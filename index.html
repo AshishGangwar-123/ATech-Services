@@ -19,8 +19,7 @@
   <meta property="og:title" content="College Services Hub — Skills, Services & Success">
   <meta property="og:description"
     content="A one-stop platform for students: Portfolio websites, project assistance, resume building, internships & placement guidance.">
-  <meta property="og:image"
-    content="https://image2url.com/images/1764764687937-4bc676d6-de9b-4872-a1b7-3072b0e67977.jpg">
+  <meta property="og:image" content="banner.png">
   <meta property="og:url" content="https://collegeserviceshub.netlify.app/">
   <meta property="og:site_name" content="College Services Hub">
 
@@ -29,8 +28,7 @@
   <meta name="twitter:title" content="College Services Hub — Skills, Services & Success">
   <meta name="twitter:description"
     content="Get professional portfolio websites, project help, internships, and career guidance for students.">
-  <meta name="twitter:image"
-    content="https://image2url.com/images/1764764687937-4bc676d6-de9b-4872-a1b7-3072b0e67977.jpg">
+  <meta name="twitter:image" content="banner.png">
 
   <!-- Extra Ranking Boost -->
   <meta name="robots" content="index, follow">
@@ -101,7 +99,9 @@
           <button id="viewRequests"
             class="px-3 py-2 rounded-lg bg-orange-600/20 text-orange-400 border border-orange-500/30 text-sm hidden hover:bg-orange-600/30 transition-colors">View
             Requests</button>
-
+          <button id="openTeach"
+            class="px-3 py-2 rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 text-sm hidden hover:bg-indigo-600/30 transition-colors">Train
+            Bot</button>
         </div>
       </div>
     </header>
@@ -246,6 +246,12 @@
             <button type="submit" class="btn-primary">Save Feedback</button>
           </div>
         </form>
+
+        <!-- List of existing testimonials (Admin View) -->
+        <div id="adminTestimonialList" class="hidden mt-8 border-t border-white/10 pt-4">
+          <h4 class="text-sm font-semibold mb-3 text-muted">Existing Feedbacks</h4>
+          <div id="testListContainer" class="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar"></div>
+        </div>
         <div class="mt-6 text-xs text-center text-muted">Tip: Use the export button to download the JSON of all
           services.
         </div>
@@ -302,33 +308,174 @@
       </div>
     </footer>
   </div> <!-- End of app-wrapper -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script>
+    // --- FIREBASE CONFIGURATION ---
+    // TODO: Replace with your actual Firebase project keys
+    const firebaseConfig = {
+      apiKey: "AIzaSy... (Replace Me)",
+      authDomain: "your-project.firebaseapp.com",
+      projectId: "your-project-id",
+      storageBucket: "your-project.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef"
+    };
+
+    let db;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      console.log("Firebase initialized");
+    } catch (e) {
+      console.error("Firebase init failed. Using Offline Mode.", e);
+      alert("Note: Firebase keys not set. Changes will not save globally.");
+    }
+    // ------------------------------
+
     let adminMode = false;
     const adminHash = "0568697146689cc753cccfe6a53af4b9f21ae9d5771e261cd9f951d304e15cfd"; // SHA-256 of password
+
+    // Local fallback keys (if offline)
     const STORAGE_KEY = 'college_services_v1';
-    const REQ_KEY = 'service_requests_v1';
     const TEST_KEY = 'aplus_testimonials_v1';
+
     let services = [];
     let testimonials = [];
     const el = id => document.getElementById(id);
 
-    const saveToStorage = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(services));
-    const loadFromStorage = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    const saveTestimonials = () => localStorage.setItem(TEST_KEY, JSON.stringify(testimonials));
-    const loadTestimonials = () => JSON.parse(localStorage.getItem(TEST_KEY) || "[]");
-
+    /* Helper Utilities */
     function genId() { return 's_' + Math.random().toString(36).slice(2, 9); }
     function escapeHtml(str = '') { return String(str).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
 
+    // Storage Helpers
+    function saveToStorage() { localStorage.setItem(STORAGE_KEY, JSON.stringify(services)); }
+    function loadFromStorage() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+
+    // --- DB Helper Functions ---
+    // Services
+    function listenToServices() {
+      if (!db) {
+        services = loadFromStorage();
+        if (services.length === 0) ensureSeed(); // This will seed and save
+        else renderGrid();
+        return;
+      }
+      db.collection('services').onSnapshot(snap => {
+        services = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (services.length === 0) ensureSeed();
+        renderGrid();
+      }, err => console.error("DB Error:", err));
+    }
+
+    async function saveServiceToDB(service) {
+      if (!db) {
+        const exist = services.find(x => x.id === service.id);
+        exist ? Object.assign(exist, service) : services.unshift(service);
+        saveToStorage();
+        renderGrid(); return;
+      }
+      const docRef = db.collection('services').doc(service.id);
+      await docRef.set(service, { merge: true });
+    }
+
+    async function deleteServiceFromDB(id) {
+      if (!db) {
+        services = services.filter(x => x.id !== id);
+        saveToStorage();
+        renderGrid(); return;
+      }
+      await db.collection('services').doc(id).delete();
+    }
+
+    // Testimonials
+    function listenToTestimonials() {
+      if (!db) {
+        testimonials = JSON.parse(localStorage.getItem(TEST_KEY) || "[]");
+        if (testimonials.length === 0) ensureTestimonials();
+        else { renderTestimonials(); if (adminMode) renderAdminTestimonials(); }
+        return;
+      }
+      db.collection('testimonials').onSnapshot(snap => {
+        testimonials = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (testimonials.length === 0) ensureTestimonials();
+        renderTestimonials();
+        if (typeof renderAdminTestimonials === 'function' && !el('adminTestimonialList').classList.contains('hidden')) renderAdminTestimonials();
+      });
+    }
+
+    async function saveTestimonialToDB(t) {
+      if (!db) {
+        const exist = testimonials.find(x => x.id === t.id);
+        exist ? Object.assign(exist, t) : testimonials.unshift(t);
+        localStorage.setItem(TEST_KEY, JSON.stringify(testimonials));
+        renderTestimonials(); return;
+      }
+      await db.collection('testimonials').doc(t.id).set(t, { merge: true });
+    }
+
+    async function deleteTestimonialFromDB(id) {
+      if (!db) {
+        testimonials = testimonials.filter(x => x.id !== id);
+        localStorage.setItem(TEST_KEY, JSON.stringify(testimonials));
+        renderTestimonials(); return;
+      }
+      await db.collection('testimonials').doc(id).delete();
+    }
+
+    // Seed Data (Same as before, but checks DB)
+    function ensureSeed() {
+      // NOTE: With Firestore, we rely on the listener to update 'services'.
+      // Only if DB is empty we seed. Logic moved to listener callback or here.
+      // For fallback:
+      if (!db && services.length === 0) {
+        // ... (existing seed logic)
+      }
+      // If DB acts, we prefer waiting for listener.
+    }
+
+    // Moved seeding array definition inside listener for DB case:
+    const seedServices = [
+      { id: 's_1', name: 'Placement Counselling', short: 'Personalized guidance for campus placements', desc: 'Resume review, mock interviews, strategy & training.', price: '₹49', tags: ['placement', 'counselling'] },
+      { id: 's_2', name: 'Mini Project Help', short: 'Ideas + Submission ready code', desc: 'Project ideas, diagrams, code and full documentation.', price: '₹599-₹2499', tags: ['project', 'code'] },
+      { id: 's_3', name: 'Resume Making', short: 'Professional ATS-friendly resume', desc: 'Resume + LinkedIn redesign, PDF export.', price: '₹199', tags: ['resume', 'cv'] },
+      { id: 's_4', name: 'Portfolio Website', short: 'Modern portfolio website to showcase skills & projects', desc: 'Responsive portfolio with contact links, projects, certificates.', price: '₹499', tags: ['portfolio', 'web'] },
+      { id: 's_5', name: 'Internship Finder', short: 'Paid & unpaid internships across fields for students & freshers', desc: 'Curated internship listings and application help.', price: 'Freely', tags: ['internship', 'opportunity'] }
+    ];
+
+    const seedTestimonials = [
+      { id: 't1', name: 'Rohan Mehta', uni: 'VIT Vellore', loc: 'Vellore, TN', msg: 'The project help was a lifesaver! Got my code and documentation on time.', img: '' },
+      { id: 't2', name: 'Sarah Khan', uni: 'Amity University', loc: 'Noida, UP', msg: 'Resume building service is top-notch. Landed 3 interviews in a week.', img: '' },
+      { id: 't3', name: 'Ankit Sharma', uni: 'SRM University', loc: 'Chennai, TN', msg: 'Found a paid internship through the finder tool. Highly recommended!', img: '' }
+    ];
+
+    function ensureSeed() {
+      // Offline / Local Storage Seeding
+      if (!db) {
+        if (services.length === 0) {
+          services = JSON.parse(JSON.stringify(seedServices)); // Clone
+          saveToStorage();
+        }
+        return;
+      }
+      // Online / Firestore Seeding
+      if (db && services.length === 0) {
+        seedServices.forEach(s => db.collection('services').doc(s.id).set(s));
+      }
+    }
+
     function ensureTestimonials() {
-      testimonials = loadTestimonials();
-      if (testimonials.length === 0) {
-        testimonials = [
-          { id: 't1', name: 'Rohan Mehta', uni: 'VIT Vellore', loc: 'Vellore, TN', msg: 'The project help was a lifesaver! Got my code and documentation on time.', img: '' },
-          { id: 't2', name: 'Sarah Khan', uni: 'Amity University', loc: 'Noida, UP', msg: 'Resume building service is top-notch. Landed 3 interviews in a week.', img: '' },
-          { id: 't3', name: 'Ankit Sharma', uni: 'SRM University', loc: 'Chennai, TN', msg: 'Found a paid internship through the finder tool. Highly recommended!', img: '' }
-        ];
-        saveTestimonials();
+      // Offline / Local Storage Seeding
+      if (!db) {
+        if (testimonials.length === 0) {
+          testimonials = JSON.parse(JSON.stringify(seedTestimonials)); // Clone
+          localStorage.setItem(TEST_KEY, JSON.stringify(testimonials));
+        }
+        return;
+      }
+      // Online / Firestore Seeding
+      if (db && testimonials.length === 0) {
+        seedTestimonials.forEach(t => db.collection('testimonials').doc(t.id).set(t));
       }
     }
 
@@ -349,26 +496,26 @@
         card.className = 'glass-card p-6 flex flex-col gap-4 w-80 md:w-96 flex-shrink-0 relative group';
 
         card.innerHTML = `
-           <div class="flex items-start justify-between">
-              <div class="flex items-center gap-3">
-                 <img src="${imgUrl}" class="w-12 h-12 rounded-full border-2 border-indigo-500/30 bg-white/5" alt="${t.name}">
-                 <div>
-                    <div class="font-bold text-white text-sm">${escapeHtml(t.name)}</div>
-                    <div class="text-[10px] text-muted">${escapeHtml(t.loc)}</div>
-                 </div>
-              </div>
-              <span class="px-2 py-1 rounded bg-indigo-500/10 border border-indigo-500/20 text-[10px] text-indigo-300 font-semibold">${escapeHtml(t.uni)}</span>
-           </div>
-           
-           <p class="text-sm text-muted/90 flex-1 leading-relaxed">"${escapeHtml(t.msg)}"</p>
-           
-           ${adminMode ? `
+    <div class="flex items-start justify-between">
+      <div class="flex items-center gap-3">
+        <img src="${imgUrl}" class="w-12 h-12 rounded-full border-2 border-indigo-500/30 bg-white/5" alt="${t.name}">
+          <div>
+            <div class="font-bold text-white text-sm">${escapeHtml(t.name)}</div>
+            <div class="text-[10px] text-muted">${escapeHtml(t.loc)}</div>
+          </div>
+      </div>
+      <span class="px-2 py-1 rounded bg-indigo-500/10 border border-indigo-500/20 text-[10px] text-indigo-300 font-semibold">${escapeHtml(t.uni)}</span>
+    </div>
+
+    <p class="text-sm text-muted/90 flex-1 leading-relaxed">"${escapeHtml(t.msg)}"</p>
+
+    ${adminMode ? `
              <div class="absolute top-2 right-2 hidden group-hover:flex gap-1 z-10">
                 <button onclick="editTestimonial('${t.id}')" class="p-1.5 rounded bg-white/10 hover:bg-white/20 text-xs text-white" title="Edit">✏️</button>
                 <button onclick="deleteTestimonial('${t.id}')" class="p-1.5 rounded bg-rose-500/20 hover:bg-rose-500/30 text-xs text-rose-400" title="Delete">🗑️</button>
              </div>
            ` : ''}
-        `;
+    `;
         return card;
       };
 
@@ -397,12 +544,11 @@
       openAdminModal();
     }
 
-    function deleteTestimonial(id) {
-      if (!adminMode) return;
+    async function deleteTestimonial(id) {
+      console.log("deleting testimonial", id, "AdminMode:", adminMode);
+      if (!adminMode) { console.error("Admin mode false"); return; }
       if (!confirm('Delete this feedback?')) return;
-      testimonials = testimonials.filter(x => x.id !== id);
-      saveTestimonials();
-      renderTestimonials();
+      await deleteTestimonialFromDB(id);
     }
 
     function ensureSeed() {
@@ -427,28 +573,28 @@
         card.style.animationDelay = (idx * 0.1) + 's';
 
         card.innerHTML = `
-      <div class="mb-4">
-        <div class="flex justify-between items-start mb-2">
-           <h3 class="text-xl font-bold tracking-tight">${escapeHtml(s.name)}</h3>
-           <span class="text-xs font-mono px-2 py-1 rounded bg-white/10 text-primary-light">${escapeHtml(s.price)}</span>
-        </div>
-        <p class="text-sm text-muted leading-relaxed">${escapeHtml(s.short)}</p>
+    <div class="mb-4">
+      <div class="flex justify-between items-start mb-2">
+        <h3 class="text-xl font-bold tracking-tight">${escapeHtml(s.name)}</h3>
+        <span class="text-xs font-mono px-2 py-1 rounded bg-white/10 text-primary-light">${escapeHtml(s.price)}</span>
       </div>
-      
-      <div>
-        <div class="flex gap-2 flex-wrap mb-4">
-          ${(s.tags || []).map(t => `<span class="tag-new">${escapeHtml(t)}</span>`).join('')}
+      <p class="text-sm text-muted leading-relaxed">${escapeHtml(s.short)}</p>
+    </div>
+
+    <div>
+      <div class="flex gap-2 flex-wrap mb-4">
+        ${(s.tags || []).map(t => `<span class="tag-new">${escapeHtml(t)}</span>`).join('')}
+      </div>
+      <div class="flex justify-between items-center pt-4 border-t border-white/5">
+        <button data-id="${s.id}" class="openService text-sm font-semibold text-primary hover:text-white transition-colors flex items-center gap-1">
+          View Details <span>→</span>
+        </button>
+        <div class="flex gap-2">
+          <button data-id="${s.id}" class="editService text-xs text-muted hover:text-white hidden px-2 py-1 rounded hover:bg-white/10">Edit</button>
+          <button data-id="${s.id}" class="deleteService text-xs text-rose-400 hover:text-rose-300 hidden px-2 py-1 rounded hover:bg-rose-500/10">Delete</button>
         </div>
-        <div class="flex justify-between items-center pt-4 border-t border-white/5">
-          <button data-id="${s.id}" class="openService text-sm font-semibold text-primary hover:text-white transition-colors flex items-center gap-1">
-             View Details <span>→</span>
-          </button>
-          <div class="flex gap-2">
-            <button data-id="${s.id}" class="editService text-xs text-muted hover:text-white hidden px-2 py-1 rounded hover:bg-white/10">Edit</button>
-            <button data-id="${s.id}" class="deleteService text-xs text-rose-400 hover:text-rose-300 hidden px-2 py-1 rounded hover:bg-rose-500/10">Delete</button>
-          </div>
-        </div>
-      </div>`;
+      </div>
+    </div>`;
         grid.appendChild(card);
       });
       document.querySelectorAll('.openService').forEach(btn => btn.addEventListener('click', e => openService(e.currentTarget.dataset.id)));
@@ -514,32 +660,32 @@
       el('serviceContent').innerHTML = `
     <div class="glass-card max-w-4xl mx-auto p-8 relative overflow-hidden">
       <div class="absolute top-0 right-0 p-32 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
-      
+
       <button id="backBtn" class="text-sm font-semibold text-muted hover:text-white mb-6 flex items-center gap-2 group">
         <span class="group-hover:-translate-x-1 transition-transform">←</span> Back to Services
       </button>
-      
+
       <div class="flex flex-col md:flex-row gap-8 items-start">
         <div class="flex-1">
-           <h2 class="text-3xl md:text-5xl font-bold mb-2 text-gradient">${escapeHtml(s.name)}</h2>
-           <p class="text-lg text-muted mb-6">${escapeHtml(s.short)}</p>
-           
-           <div class="prose prose-invert prose-sm max-w-none text-muted/90 mb-8 p-6 rounded-2xl bg-black/20 border border-white/5">
-             ${(s.desc || '').replaceAll('\n', '<br>')}
-           </div>
-           
-           <div class="flex gap-3 flex-wrap"> 
-               ${(s.tags || []).map(t => `<span class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs">${t}</span>`).join('')}
-           </div>
+          <h2 class="text-3xl md:text-5xl font-bold mb-2 text-gradient">${escapeHtml(s.name)}</h2>
+          <p class="text-lg text-muted mb-6">${escapeHtml(s.short)}</p>
+
+          <div class="prose prose-invert prose-sm max-w-none text-muted/90 mb-8 p-6 rounded-2xl bg-black/20 border border-white/5">
+            ${(s.desc || '').replaceAll('\n', '<br>')}
+          </div>
+
+          <div class="flex gap-3 flex-wrap">
+            ${(s.tags || []).map(t => `<span class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs">${t}</span>`).join('')}
+          </div>
         </div>
-        
+
         <div class="w-full md:w-80 glass p-6 rounded-xl space-y-4">
-            <div class="text-center pb-4 border-b border-white/10">
-                <div class="text-sm text-muted mb-1">Price</div>
-                <div class="text-3xl font-bold">${escapeHtml(s.price)}</div>
-            </div>
-            <a href="request.html?service=${encodeURIComponent(s.name)}" class="btn-primary w-full block text-center shadow-lg shadow-indigo-500/20">Request Service</a>
-            <button id="editFromView" class="w-full py-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm text-muted hidden transition-colors">Edit Details</button>
+          <div class="text-center pb-4 border-b border-white/10">
+            <div class="text-sm text-muted mb-1">Price</div>
+            <div class="text-3xl font-bold">${escapeHtml(s.price)}</div>
+          </div>
+          <a href="request.html?service=${encodeURIComponent(s.name)}" class="btn-primary w-full block text-center shadow-lg shadow-indigo-500/20">Request Service</a>
+          <button id="editFromView" class="w-full py-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm text-muted hidden transition-colors">Edit Details</button>
         </div>
       </div>
     </div>`;
@@ -547,9 +693,13 @@
       if (adminMode) { el("editFromView").classList.remove("hidden"); el("editFromView").onclick = () => editService(s.id); }
     }
 
-    function openAdminModal() { clearForm(); el('adminModal').classList.remove('hidden'); el('adminModal').classList.add('flex'); }
+    function openAdminModal() { el('adminModal').classList.remove('hidden'); el('adminModal').classList.add('flex'); }
     function closeAdminModal() { el('adminModal').classList.add('hidden'); el('adminModal').classList.remove('flex'); }
-    function clearForm() { ['serviceId', 'serviceName', 'serviceShort', 'serviceDesc', 'servicePrice', 'serviceTags'].forEach(id => el(id).value = ''); }
+    function clearForm() {
+      ['serviceId', 'serviceName', 'serviceShort', 'serviceDesc', 'servicePrice', 'serviceTags'].forEach(id => el(id).value = '');
+      el('testimonialForm').reset();
+      el('testId').value = '';
+    }
 
     function editService(id) {
       if (!adminMode) return alert("Unauthorized Access");
@@ -559,15 +709,41 @@
       openAdminModal();
     }
 
-    function deleteService(id) {
+    async function deleteService(id) {
       if (!adminMode) return alert("Unauthorized Access");
       if (!confirm("Delete this service?")) return;
-      services = services.filter(x => x.id !== id); saveToStorage(); renderGrid();
+      await deleteServiceFromDB(id);
       if (location.hash === "#service/" + id) location.hash = '';
     }
 
     /* Requests: load, render, delete */
-    function loadRequests() { return JSON.parse(localStorage.getItem(REQ_KEY) || "[]"); }
+    // ... (rest of code) ...
+    // Note: I need to target the block containing openAdminModal and init listeners
+
+    // ... skipping to the renderAdminTestimonials part ...
+    function renderAdminTestimonials() {
+      const cont = el('testListContainer');
+      cont.innerHTML = '';
+      testimonials.forEach(t => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between p-3 rounded bg-white/5 hover:bg-white/10 transition-colors border border-white/5';
+        div.innerHTML = `
+    <div class="flex items-center gap-3 overflow-hidden">
+      <img src="${t.img || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(t.name)}`}" class="w-8 h-8 rounded-full bg-black/20">
+        <div class="truncate">
+          <div class="text-xs font-bold text-white">${escapeHtml(t.name)}</div>
+          <div class="text-[10px] text-muted truncate">${escapeHtml(t.msg)}</div>
+        </div>
+    </div>
+    <div class="flex gap-2 flex-shrink-0">
+      <button type="button" onclick="editTestimonial('${t.id}')" class="editTestBtn text-xs p-1.5 rounded bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30">Edit</button>
+      <button type="button" onclick="deleteTestimonial('${t.id}')" class="delTestBtn text-xs p-1.5 rounded bg-rose-500/20 text-rose-300 hover:bg-rose-500/30">Del</button>
+    </div>
+    `;
+        cont.appendChild(div);
+      });
+    }
+
 
     function renderRequests() {
       const listEl = el('requestsList');
@@ -586,24 +762,24 @@
         const CONTACT_EMAIL = "faindno.1.com";
         const WHATSAPP_NUMBER = "91XXXXXXXXXX";
         card.innerHTML = `
-      <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
-        <div class="space-y-1">
-          <div class="flex items-center gap-2">
-             <span class="font-bold text-base text-white">${escapeHtml(r.name)}</span>
-             <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-muted">${escapeHtml(r.date)}</span>
-          </div>
-          <div class="text-muted">Request for <strong class="text-white">${escapeHtml(r.service)}</strong></div>
-          <div class="text-xs text-muted/80 font-mono">
-            ${escapeHtml(r.phone)} • ${escapeHtml(r.email)}
-          </div>
-          <div class="mt-2 text-sm text-slate-300 bg-black/20 p-2 rounded">${escapeHtml(r.details || 'No details provided')}</div>
+    <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-base text-white">${escapeHtml(r.name)}</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-muted">${escapeHtml(r.date)}</span>
         </div>
-        <div class="flex sm:flex-col gap-2 w-full sm:w-auto">
-          <a href="mailto:${r.email}" class="px-3 py-1.5 text-xs font-semibold bg-emerald-500/20 text-emerald-400 rounded hover:bg-emerald-500/30 text-center">Email</a>
-          <a href="https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, '')}?text=${encodeURIComponent('Hello, regarding: ' + r.service)}" target="_blank" class="px-3 py-1.5 text-xs font-semibold bg-green-500/20 text-green-400 rounded hover:bg-green-500/30 text-center">WhatsApp</a>
-          <button class="px-3 py-1.5 text-xs font-semibold bg-rose-500/20 text-rose-400 rounded hover:bg-rose-500/30 delReq" data-index="${i}">Delete</button>
+        <div class="text-muted">Request for <strong class="text-white">${escapeHtml(r.service)}</strong></div>
+        <div class="text-xs text-muted/80 font-mono">
+          ${escapeHtml(r.phone)} • ${escapeHtml(r.email)}
         </div>
-      </div>`;
+        <div class="mt-2 text-sm text-slate-300 bg-black/20 p-2 rounded">${escapeHtml(r.details || 'No details provided')}</div>
+      </div>
+      <div class="flex sm:flex-col gap-2 w-full sm:w-auto">
+        <a href="mailto:${r.email}" class="px-3 py-1.5 text-xs font-semibold bg-emerald-500/20 text-emerald-400 rounded hover:bg-emerald-500/30 text-center">Email</a>
+        <a href="https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, '')}?text=${encodeURIComponent('Hello, regarding: ' + r.service)}" target="_blank" class="px-3 py-1.5 text-xs font-semibold bg-green-500/20 text-green-400 rounded hover:bg-green-500/30 text-center">WhatsApp</a>
+        <button class="px-3 py-1.5 text-xs font-semibold bg-rose-500/20 text-rose-400 rounded hover:bg-rose-500/30 delReq" data-index="${i}">Delete</button>
+      </div>
+    </div>`;
         listEl.appendChild(card);
       });
 
@@ -628,7 +804,8 @@
     else { body.classList.add('theme-dark'); localStorage.setItem('theme', 'dark'); }
 
     document.addEventListener("DOMContentLoaded", () => {
-      ensureSeed(); ensureTestimonials(); renderGrid(); renderTestimonials();
+      listenToServices(); listenToTestimonials();
+
       const q = new URLSearchParams(window.location.search);
       const service = q.get("service");
       if (service) document.getElementById("serviceName").value = service;
@@ -643,19 +820,20 @@
       window.addEventListener('hashchange', handleHash); handleHash();
 
       el('premiumBtn').addEventListener('click', askAdminPassword);
-      el('openAdmin').addEventListener('click', openAdminModal);
+      el('openAdmin').addEventListener('click', () => { clearForm(); openAdminModal(); });
       el('closeAdmin')?.addEventListener('click', closeAdminModal);
 
-      el('serviceForm').addEventListener('submit', ev => {
+      el('serviceForm').addEventListener('submit', async ev => {
         ev.preventDefault();
         const id = el('serviceId').value || genId();
         const obj = { id, name: el('serviceName').value.trim(), short: el('serviceShort').value.trim(), desc: el('serviceDesc').value.trim(), price: el('servicePrice').value.trim(), tags: el('serviceTags').value.split(',').map(t => t.trim()).filter(Boolean) };
-        const exist = services.find(x => x.id === id); exist ? Object.assign(exist, obj) : services.unshift(obj);
-        saveToStorage(); renderGrid(); closeAdminModal();
+
+        await saveServiceToDB(obj);
+        closeAdminModal();
       });
 
       // Testimonial Form Submit
-      el('testimonialForm').addEventListener('submit', ev => {
+      el('testimonialForm').addEventListener('submit', async ev => {
         ev.preventDefault();
         const id = el('testId').value || genId();
         const obj = {
@@ -667,12 +845,7 @@
           img: el('testImg').value.trim()
         };
 
-        const exist = testimonials.find(x => x.id === id);
-        if (exist) Object.assign(exist, obj);
-        else testimonials.unshift(obj);
-
-        saveTestimonials();
-        renderTestimonials();
+        await saveTestimonialToDB(obj);
         alert('Feedback Saved!');
         el('testimonialForm').reset();
         el('testId').value = '';
@@ -693,13 +866,42 @@
         tabS.classList.add('bg-indigo-500/20', 'text-indigo-300'); tabS.classList.remove('bg-white/5', 'text-muted');
         tabT.classList.remove('bg-indigo-500/20', 'text-indigo-300'); tabT.classList.add('bg-white/5', 'text-muted');
         formS.classList.remove('hidden'); formT.classList.add('hidden');
+        el('adminTestimonialList').classList.add('hidden');
       });
 
       tabT?.addEventListener('click', () => {
         tabT.classList.add('bg-indigo-500/20', 'text-indigo-300'); tabT.classList.remove('bg-white/5', 'text-muted');
         tabS.classList.remove('bg-indigo-500/20', 'text-indigo-300'); tabS.classList.add('bg-white/5', 'text-muted');
         formT.classList.remove('hidden'); formS.classList.add('hidden');
+        el('adminTestimonialList').classList.remove('hidden');
+        renderAdminTestimonials();
       });
+
+      function renderAdminTestimonials() {
+        const cont = el('testListContainer');
+        cont.innerHTML = '';
+        testimonials.forEach(t => {
+          const div = document.createElement('div');
+          div.className = 'flex items-center justify-between p-3 rounded bg-white/5 hover:bg-white/10 transition-colors border border-white/5';
+          div.innerHTML = `
+    <div class="flex items-center gap-3 overflow-hidden">
+      <img src="${t.img || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(t.name)}`}" class="w-8 h-8 rounded-full bg-black/20">
+        <div class="truncate">
+          <div class="text-xs font-bold text-white">${escapeHtml(t.name)}</div>
+          <div class="text-[10px] text-muted truncate">${escapeHtml(t.msg)}</div>
+        </div>
+    </div>
+    <div class="flex gap-2 flex-shrink-0">
+      <button class="editTestBtn text-xs p-1.5 rounded bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30">Edit</button>
+      <button class="delTestBtn text-xs p-1.5 rounded bg-rose-500/20 text-rose-300 hover:bg-rose-500/30">Del</button>
+    </div>
+          `;
+          cont.appendChild(div);
+
+          div.querySelector('.editTestBtn').onclick = () => editTestimonial(t.id);
+          div.querySelector('.delTestBtn').onclick = () => deleteTestimonial(t.id);
+        });
+      }
 
       // viewRequests toggle
       el('viewRequests').addEventListener('click', () => {
@@ -763,6 +965,7 @@
       });
 
       // --- Admin Teaching Logic ---
+      // --- Admin Teaching Logic ---
       el('teachBtn').addEventListener('click', () => {
         const q = el('teachQ').value.trim();
         const a = el('teachA').value.trim();
@@ -776,15 +979,19 @@
         }
       });
 
-      // Admin Panel Toggle (Simple switch for now)
-      el('viewRequests').addEventListener('click', () => {
-        el('requestsPanel').classList.remove('hidden');
-        el('teachPanel').classList.add('hidden');
+      // Admin Panel Toggle
+      el('openTeach')?.addEventListener('click', () => {
+        el('teachPanel').classList.toggle('hidden');
+        el('requestsPanel').classList.add('hidden');
+        if (!el('teachPanel').classList.contains('hidden')) el('teachPanel').scrollIntoView({ behavior: 'smooth' });
       });
 
-      // Add a 'Train Bot' button to header if admin
-      // We'll just reuse the showAdminOptions to append a button if not exists
-
+      el('viewRequests')?.addEventListener('click', () => {
+        el('requestsPanel').classList.toggle('hidden');
+        el('teachPanel').classList.add('hidden');
+        renderRequests();
+        if (!el('requestsPanel').classList.contains('hidden')) el('requestsPanel').scrollIntoView({ behavior: 'smooth' });
+      });
     });
   </script>
   <script src="chatbot.js"></script>
